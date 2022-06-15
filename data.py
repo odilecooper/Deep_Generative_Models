@@ -38,9 +38,9 @@ def load_data(filename):
         for line in file.readlines():
             data.append([float(i) for i in line.split(',')])
     data = np.asarray(data)
-    # plt.scatter(data[:, 0], data[:, 1], c=data[:, 2])
-    # plt.xlabel("z[0]")
-    # plt.ylabel("z[1]")
+    plt.figure(figsize=(16, 12))
+    plt.scatter(data[:, 0], data[:, 1], c=data[:, 2])
+    plt.savefig('data/train.png')
     # plt.show()
     x = np.array(data[:, 0:2])
     y = np.array(data[:, 2])
@@ -48,5 +48,5 @@ def load_data(filename):
     # return x, y
     return data
 
-generate_all()
-# load_data('data/train.txt')
+# generate_all()
+load_data('data/train.txt')

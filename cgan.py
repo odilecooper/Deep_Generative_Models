@@ -1,42 +1,10 @@
+import numpy as np
+import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
-
-# from tensorflow_docs.vis import embed
 import matplotlib.pyplot as plt
-import tensorflow as tf
-import numpy as np
-# import imageio
 
 from data import load_data
-
-'''
-(x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
-all_digits = np.concatenate([x_train, x_test])
-all_labels = np.concatenate([y_train, y_test])
-
-# Scale the pixel values to [0, 1] range, add a channel dimension to
-# the images, and one-hot encode the labels.
-all_digits = all_digits.astype("float32") / 255.0
-all_digits = np.reshape(all_digits, (-1, 28, 28, 1))
-all_labels = keras.utils.to_categorical(all_labels, 10)
-
-# Create tf.data.Dataset.
-dataset = tf.data.Dataset.from_tensor_slices((all_digits, all_labels))
-dataset = dataset.shuffle(buffer_size=1024).batch(batch_size)
-'''
-
-latent_dim = 2
-
-train_data = load_data('data/train.txt')
-train_data = train_data / 50
-# train_data = np.expand_dims(train_data, axis=-1) / 50
-all_digits = train_data[:, 0:2]
-all_labels = train_data[:, 2]
-
-print(f"Shape of training samples: {all_digits.shape}")
-print(f"Shape of training labels: {all_labels.shape}")
-
-
 class ConditionalGAN(keras.Model):
     def __init__(self):
         super(ConditionalGAN, self).__init__()
@@ -76,10 +44,7 @@ class ConditionalGAN(keras.Model):
     def train_step(self, data):
         real_samples, labels = data
         labels = tf.expand_dims(labels, axis=1)
-        # labels = tf.cast(labels, dtype=tf.int32)
 
-        # Sample random points in the latent space and concatenate the labels.
-        # This is for the generator.
         batch_size = tf.shape(real_samples)[0]
         random_latent_vectors = tf.squeeze(tf.random.normal(shape=(batch_size, self.latent_dim)))
         random_vector_labels = tf.concat([random_latent_vectors, labels], axis=1)
@@ -96,11 +61,9 @@ class ConditionalGAN(keras.Model):
         grads = tape.gradient(d_loss, self.discriminator.trainable_weights)
         self.d_optimizer.apply_gradients(zip(grads, self.discriminator.trainable_weights))
 
-        # Sample random points in the latent space.
         random_latent_vectors = tf.random.normal(shape=(batch_size, self.latent_dim))
         random_vector_labels = tf.concat([random_latent_vectors, labels], axis=1)
 
-        # Assemble labels that say "all real samples".
         misleading_labels = tf.zeros((batch_size, 1))
         with tf.GradientTape() as tape:
             fake_samples = self.generator(random_vector_labels)
@@ -126,12 +89,20 @@ def plot_predict(cgan):
     sample_zc = np.concatenate([sample_z, sample_c], axis=1)
     output = cgan.generator.predict(sample_zc)
     plt.scatter(output[:, 0], output[:, 1], c=sample_c)
-    plt.xlabel("z[0]")
-    plt.ylabel("z[1]")
     plt.savefig('cgan_gen/predict.png')
     # plt.show()
 
 def train_cgan():
+    print("Loading data for cGAN training...")
+    train_data = load_data('data/train.txt')
+    train_data = train_data / 50
+    all_digits = train_data[:, 0:2]
+    all_labels = train_data[:, 2]
+    print("Successfully loaded data.")
+
+    # print(f"Shape of training samples: {all_digits.shape}")
+    # print(f"Shape of training labels: {all_labels.shape}")
+
     cgan = ConditionalGAN()
     cgan.compile(
         d_optimizer=keras.optimizers.Adam(learning_rate=0.0003),
@@ -140,7 +111,8 @@ def train_cgan():
     )
     cgan.fit(all_digits, all_labels, epochs=20)
 
+    print("Generating...")
     plot_predict(cgan)
-
+    print("Samples have been generated and saved to cgan_gen/.")
 
 train_cgan()
