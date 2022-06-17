@@ -10,7 +10,6 @@ def generate_one_set():
     for x  in range(5):
         for y in range(5):
             new_data = np.random.randn(400, 2) + [x*10+5, y*10+5] # 10000/25 = 400
-            # new_data = np.clip(new_data, 0, 50)
             label = np.full((400, 1), x+y*5)
             new_data = np.concatenate([new_data, label], axis=1)
             # plt.scatter(new_data[:, 0], new_data[:, 1])

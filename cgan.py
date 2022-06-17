@@ -99,8 +99,7 @@ def plot_predict(cgan):
 def train_cgan():
     print("Loading data for cGAN training...")
     train_data = load_data('data/train.txt')
-    train_data = train_data / 50
-    all_digits = train_data[:, 0:2]
+    all_digits = train_data[:, 0:2] / 50
     all_labels = train_data[:, 2]
     print("Successfully loaded data.")
 
