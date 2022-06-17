@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 
 from data import load_data
 
+root_dir='cvae_gen/'
 class Sampling(layers.Layer):
     def call(self, inputs):
         z_mean, z_log_var = inputs
@@ -90,9 +91,28 @@ def plot_predict(cvae):
         sample_c = np.concatenate([sample_c, new_sample_c], axis=0)
     sample_zc = np.concatenate([sample_z, sample_c], axis=1)
     output = cvae.decoder.predict(sample_zc)
+    output = output * 50
     plt.scatter(output[:, 0], output[:, 1], c=sample_c)
-    plt.savefig('cvae_gen/predict.png')
+    plt.savefig(root_dir + 'predict.png')
     # plt.show()
+    plt.close()
+    density = np.zeros([50, 50])
+    for i in range(output.shape[0]):
+        xi = int(output[i, 0])
+        yi = int(output[i, 1])
+        density[xi, yi] += 1
+    return density
+
+def plot_density(density):
+    fig, ax = plt.subplots()
+    im = ax.imshow(density)
+    ax.set_xticks(np.arange(50, step=5))
+    ax.set_yticks(np.arange(50, step=5), np.flip(np.arange(50, step=5), axis=0))
+    ax.invert_yaxis()
+    im = ax.imshow(density, cmap=plt.cm.OrRd)
+    plt.colorbar(im)
+    plt.savefig(root_dir + 'density.png')
+    plt.close()
 
 def train_cvae():
     print("Loading data for cVAE training...")
@@ -103,7 +123,7 @@ def train_cvae():
     cvae = CVAE()
     cvae.compile(optimizer=keras.optimizers.Adam())
     tb_callback = tf.keras.callbacks.TensorBoard('./cvae_gen', update_freq=1)
-    cvae.fit(train_data, shuffle=True, epochs=40, batch_size=128, callbacks=[tb_callback])
+    cvae.fit(train_data, shuffle=True, epochs=5000, batch_size=128, callbacks=[tb_callback])
 
     print("Generating...")
     plot_label_clusters(cvae, train_data)

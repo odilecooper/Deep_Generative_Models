@@ -5,6 +5,8 @@ from tensorflow.keras import layers
 import matplotlib.pyplot as plt
 
 from data import load_data
+
+root_dir = 'cgan_gen/'
 class ConditionalGAN(keras.Model):
     def __init__(self):
         super(ConditionalGAN, self).__init__()
@@ -92,9 +94,29 @@ def plot_predict(cgan):
         sample_c = np.concatenate([sample_c, new_sample_c], axis=0)
     sample_zc = np.concatenate([sample_z, sample_c], axis=1)
     output = cgan.generator.predict(sample_zc)
+    output = output * 50
     plt.scatter(output[:, 0], output[:, 1], c=sample_c)
-    plt.savefig('cgan_gen/predict.png')
+    plt.savefig(root_dir + 'predict.png')
     # plt.show()
+    plt.close()
+
+    density = np.zeros([50, 50])
+    for i in range(output.shape[0]):
+        xi = int(output[i, 0])
+        yi = int(output[i, 1])
+        density[xi, yi] += 1
+    return density
+
+def plot_density(density):
+    fig, ax = plt.subplots()
+    im = ax.imshow(density)
+    ax.set_xticks(np.arange(50, step=5))
+    ax.set_yticks(np.arange(50, step=5), np.flip(np.arange(50, step=5), axis=0))
+    ax.invert_yaxis()
+    im = ax.imshow(density, cmap=plt.cm.OrRd)
+    plt.colorbar(im)
+    plt.savefig(root_dir + 'density.png')
+    plt.close()
 
 def train_cgan():
     print("Loading data for cGAN training...")
@@ -113,7 +135,7 @@ def train_cgan():
         loss_fn=keras.losses.BinaryCrossentropy(from_logits=True),
     )
     tb_callback = tf.keras.callbacks.TensorBoard('./cgan_gen', update_freq=1)
-    cgan.fit(all_digits, all_labels, epochs=40, callbacks=[tb_callback])
+    cgan.fit(all_digits, all_labels, epochs=5000, callbacks=[tb_callback])
 
     print("Generating...")
     plot_predict(cgan)

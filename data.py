@@ -31,21 +31,40 @@ def generate_all():
             for i in range(data.shape[0]):
                 f.write(str(data[i,0])+','+str(data[i,1])+','+str(data[i,2])+'\n')
 
-def load_data(filename):
+def load_data(filename, plot=False):
     data = []
     with open(filename,'r') as file:
         for line in file.readlines():
             data.append([float(i) for i in line.split(',')])
     data = np.asarray(data)
-    plt.figure(figsize=(16, 12))
-    plt.scatter(data[:, 0], data[:, 1], c=data[:, 2])
-    plt.savefig('data/train.png')
-    # plt.show()
-    x = np.array(data[:, 0:2])
-    y = np.array(data[:, 2])
+    feat = np.array(data[:, 0:2])
+    label = np.array(data[:, 2])
 
-    # return x, y
+    if plot is True:
+        plt.figure(figsize=(16, 12))
+        plt.scatter(data[:, 0], data[:, 1], c=data[:, 2])
+        # plt.savefig('data/train.png')
+        # plt.show()
+        plt.close()
+    # plot density
+        density = np.zeros([50, 50])
+        for i in range(data.shape[0]):
+            xi = int(data[i, 0])
+            yi = int(data[i, 1])
+            density[xi, yi] += 1
+    
+        fig, ax = plt.subplots()
+        im = ax.imshow(density)
+        ax.set_xticks(np.arange(50, step=5))
+        ax.set_yticks(np.arange(50, step=5), np.flip(np.arange(50, step=5), axis=0))
+        ax.invert_yaxis()
+        im = ax.imshow(density, cmap=plt.cm.OrRd)
+        plt.colorbar(im)
+        plt.savefig('data/density.png')
+        plt.close()
+
+    # return feat, label
     return data
 
 # generate_all()
-load_data('data/train.txt')
+load_data('data/train.txt', plot=True)

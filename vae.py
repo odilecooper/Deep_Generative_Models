@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 
 from data import load_data
 
+root_dir = 'vae_gen/'
 
 class Sampling(layers.Layer):
     """Uses (z_mean, z_log_var) to sample z, the vector encoding a digit."""
@@ -79,9 +80,29 @@ class VAE(keras.Model):
 def plot_predict(vae):
     sample_z = np.random.randn(1000, 2)
     output = vae.decoder.predict(sample_z)
+    output = output * 50
     plt.scatter(output[:, 0], output[:, 1])
-    plt.savefig('vae_gen/predict.png')
+    plt.savefig(root_dir + 'predict.png')
     # plt.show()
+    plt.close()
+
+    density = np.zeros([50, 50])
+    for i in range(output.shape[0]):
+        xi = int(output[i, 0])
+        yi = int(output[i, 1])
+        density[xi, yi] += 1
+    return density
+
+def plot_density(density):
+    fig, ax = plt.subplots()
+    im = ax.imshow(density)
+    ax.set_xticks(np.arange(50, step=5))
+    ax.set_yticks(np.arange(50, step=5), np.flip(np.arange(50, step=5), axis=0))
+    ax.invert_yaxis()
+    im = ax.imshow(density, cmap=plt.cm.OrRd)
+    plt.colorbar(im)
+    plt.savefig(root_dir + 'density.png')
+    plt.close()
 
 def train_vae():
     print("Loading data for VAE training...")
@@ -91,11 +112,12 @@ def train_vae():
 
     vae = VAE()
     vae.compile(optimizer=keras.optimizers.Adam())
-    tb_callback = tf.keras.callbacks.TensorBoard('./vae_gen', update_freq=1)
-    vae.fit(train_data, shuffle=True, epochs=40, batch_size=128, callbacks=[tb_callback])
+    tb_callback = tf.keras.callbacks.TensorBoard('./vae_gen', update_freq=10)
+    vae.fit(train_data, shuffle=True, epochs=100, batch_size=128, callbacks=[tb_callback])
 
     print("Generating...")
-    plot_predict(vae)
-    print("Samples have been generated and saved to vae_gen/.")
+    density = plot_predict(vae)
+    plot_density(density)
+    print("Samples have been generated and saved to" + root_dir)
 
 train_vae()
