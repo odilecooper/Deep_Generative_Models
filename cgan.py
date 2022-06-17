@@ -14,6 +14,7 @@ class ConditionalGAN(keras.Model):
         self.latent_dim = 2
         self.gen_loss_tracker = keras.metrics.Mean(name="generator_loss")
         self.disc_loss_tracker = keras.metrics.Mean(name="discriminator_loss")
+        self.total_loss_tracker = keras.metrics.Mean(name="total_loss")
 
         self.generator_in_channels = self.latent_dim + 1
         self.discriminator_in_channels = self.num_channels + 1
@@ -33,7 +34,7 @@ class ConditionalGAN(keras.Model):
 
     @property
     def metrics(self):
-        return [self.gen_loss_tracker, self.disc_loss_tracker]
+        return [self.gen_loss_tracker, self.disc_loss_tracker, self.total_loss_tracker]
 
     def compile(self, d_optimizer, g_optimizer, loss_fn):
         super(ConditionalGAN, self).compile()
@@ -73,11 +74,14 @@ class ConditionalGAN(keras.Model):
         grads = tape.gradient(g_loss, self.generator.trainable_weights)
         self.g_optimizer.apply_gradients(zip(grads, self.generator.trainable_weights))
 
+        total_loss = d_loss + g_loss
         self.gen_loss_tracker.update_state(g_loss)
         self.disc_loss_tracker.update_state(d_loss)
+        self.total_loss_tracker.update_state(total_loss)
         return {
             "g_loss": self.gen_loss_tracker.result(),
             "d_loss": self.disc_loss_tracker.result(),
+            "total_loss": self.total_loss_tracker.result()
         }
 
 def plot_predict(cgan):
@@ -109,7 +113,8 @@ def train_cgan():
         g_optimizer=keras.optimizers.Adam(learning_rate=0.0003),
         loss_fn=keras.losses.BinaryCrossentropy(from_logits=True),
     )
-    cgan.fit(all_digits, all_labels, epochs=20)
+    tb_callback = tf.keras.callbacks.TensorBoard('./cgan_gen', update_freq=1)
+    cgan.fit(all_digits, all_labels, epochs=40, callbacks=[tb_callback])
 
     print("Generating...")
     plot_predict(cgan)

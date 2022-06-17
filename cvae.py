@@ -102,7 +102,8 @@ def train_cvae():
 
     cvae = CVAE()
     cvae.compile(optimizer=keras.optimizers.Adam())
-    cvae.fit(train_data, shuffle=True, epochs=40, batch_size=128)
+    tb_callback = tf.keras.callbacks.TensorBoard('./cvae_gen', update_freq=1)
+    cvae.fit(train_data, shuffle=True, epochs=40, batch_size=128, callbacks=[tb_callback])
 
     print("Generating...")
     plot_label_clusters(cvae, train_data)

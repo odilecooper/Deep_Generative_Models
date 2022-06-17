@@ -9,7 +9,6 @@ from data import load_data
 
 class Sampling(layers.Layer):
     """Uses (z_mean, z_log_var) to sample z, the vector encoding a digit."""
-
     def call(self, inputs):
         z_mean, z_log_var = inputs
         batch = tf.shape(z_mean)[0]
@@ -92,7 +91,8 @@ def train_vae():
 
     vae = VAE()
     vae.compile(optimizer=keras.optimizers.Adam())
-    vae.fit(train_data, shuffle=True, epochs=20, batch_size=128)
+    tb_callback = tf.keras.callbacks.TensorBoard('./vae_gen', update_freq=1)
+    vae.fit(train_data, shuffle=True, epochs=40, batch_size=128, callbacks=[tb_callback])
 
     print("Generating...")
     plot_predict(vae)
